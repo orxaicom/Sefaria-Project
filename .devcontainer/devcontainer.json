@@ -1,5 +1,5 @@
 {
     "image": "ghcr.io/orxaicom/sefaria-container-unofficial:latest",
     "forwardPorts": [8000],
-    "postStartCommand": ".devcontainer/postStart.sh"
+    "postStartCommand": "chmod +x .devcontainer/postStart.sh && .devcontainer/postStart.sh"
 }
