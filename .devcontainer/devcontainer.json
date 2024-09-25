@@ -4,9 +4,5 @@
     "postCreateCommand": "chmod +x .devcontainer/postCreate.sh && .devcontainer/postCreate.sh",
     "postStartCommand": "chmod +x .devcontainer/postStart.sh && .devcontainer/postStart.sh",
     "remoteUser": "root",
-    "runArgs": ["--privileged"],
-    "mounts": [
-        "source=${localWorkspaceFolder},target=/workspaces/Sefaria-Project,type=bind,consistency=cached"
-    ],
-    "workspaceFolder": "/workspaces/Sefaria-Project"
+    "runArgs": ["--privileged"]
 }
