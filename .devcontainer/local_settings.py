@@ -17,7 +17,7 @@ import os
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': '/workspaces/Sefaria-Project/db.sqlite', # Path to where you would like the database to be created including a file name, or path to an existing database file if using sqlite3.
+        'NAME': 'db.sqlite', # Path to where you would like the database to be created including a file name, or path to an existing database file if using sqlite3.
         'USER': '',                      # Not used with sqlite3.
         'PASSWORD': '',                  # Not used with sqlite3.
         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
@@ -48,7 +48,7 @@ DOMAIN_LANGUAGES = {
 ################ These are things you can change! ###########################################################################
 SILENCED_SYSTEM_CHECKS = ['captcha.recaptcha_test_key_error']
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", ".github.dev"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1","0.0.0.0"]
 
 ADMINS = (
      ('Your Name', 'you@example.com'),
@@ -69,6 +69,7 @@ APSCHEDULER_NAME = "apscheduler"
 
 
 """ These are some examples of possible caches. more here: https://docs.djangoproject.com/en/1.11/topics/cache/"""
+"""
 CACHES = {
     "shared": {
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
@@ -88,7 +89,6 @@ CACHES = {
         'LOCATION': '/home/ephraim/www/sefaria/django_cache/',
     }
 }
-"""
 
 SESSION_CACHE_ALIAS = "default"
 USER_AGENTS_CACHE = 'default'
@@ -128,8 +128,8 @@ SITE_PACKAGE = "sites.sefaria"
 
 
 ################ These are things you DO NOT NEED to touch unless you know what you are doing. ##############################
-DEBUG = False
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '.github.dev']
+DEBUG = True
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
 OFFLINE = False
 DOWN_FOR_MAINTENANCE = False
 MAINTENANCE_MESSAGE = ""
