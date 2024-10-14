@@ -1,5 +1,14 @@
 # How to run Sefaria?
 
+There are two ways:
+1. Codespaces (online)
+2. Locally
+
+## 1. Codespaces (online)
+
+> [!NOTE]  
+> Disable adblocks, and on FireFox, Disable Tracking Protection (Shield logo near the URL).
+
 ![1](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/1.png)
 ![2](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/2.png)
 ![3](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/3.png)
@@ -12,7 +21,19 @@
 
 > [!TIP]
 > After you're done, go to [your Codespaces](https://github.com/codespaces) page and stop or delete the machine to save time.
-> I don't know how much is monthly allowance, I never ran out though!
+> I don't know how much is the monthly allowance, I never ran out though!
+
+## 2. Locally
+
+* Install Docker on your computer
+* Install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension on VSCode. (If you had any problems installing it, open an issue).
+* Clone this repository
+* Open it in VSCode.
+
+A pop up gives you an option to pull the Docker image and run this repository inside it.
+
+> [!NOTE]  
+> The image is big (~3.5 Gigs), because it contains the database and the packages.
 
 ## Sefaria
 
