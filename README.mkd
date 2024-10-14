@@ -1,4 +1,17 @@
-# Sefaria
+# How to run Sefaria?
+
+![1](orxaicom/Sefaria-Project/tutorial-pics/1.png)
+![2](orxaicom/Sefaria-Project/tutorial-pics/2.png)
+![3](orxaicom/Sefaria-Project/tutorial-pics/3.png)
+![4](orxaicom/Sefaria-Project/tutorial-pics/4.png)
+![5](orxaicom/Sefaria-Project/tutorial-pics/5.png)
+![6](orxaicom/Sefaria-Project/tutorial-pics/6.png)
+![7](orxaicom/Sefaria-Project/tutorial-pics/7.png)
+![8](orxaicom/Sefaria-Project/tutorial-pics/8.png)
+![9](orxaicom/Sefaria-Project/tutorial-pics/9.png)
+
+
+## Sefaria
 
 [Sefaria](https://www.sefaria.org) is a digital library and platform for accessing Jewish texts and text-based learning. We invite developers to leverage the largest open-source database of Jewish texts in history to build apps and services utilizing the Jewish canon.
 
