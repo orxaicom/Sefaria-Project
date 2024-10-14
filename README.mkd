@@ -1,14 +1,14 @@
 # How to run Sefaria?
 
-![1](orxaicom/Sefaria-Project/tutorial-pics/1.png)
-![2](orxaicom/Sefaria-Project/tutorial-pics/2.png)
-![3](orxaicom/Sefaria-Project/tutorial-pics/3.png)
-![4](orxaicom/Sefaria-Project/tutorial-pics/4.png)
-![5](orxaicom/Sefaria-Project/tutorial-pics/5.png)
-![6](orxaicom/Sefaria-Project/tutorial-pics/6.png)
-![7](orxaicom/Sefaria-Project/tutorial-pics/7.png)
-![8](orxaicom/Sefaria-Project/tutorial-pics/8.png)
-![9](orxaicom/Sefaria-Project/tutorial-pics/9.png)
+![1](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/1.png)
+![2](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/2.png)
+![3](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/1.png)
+![4](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/1.png)
+![5](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/1.png)
+![6](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/1.png)
+![7](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/1.png)
+![8](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/1.png)
+![9](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/1.png)
 
 
 ## Sefaria
