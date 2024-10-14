@@ -10,6 +10,9 @@
 ![8](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/8.png)
 ![9](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/9.png)
 
+> [!TIP]
+> After you're done, go to [your Codespaces](https://github.com/codespaces) page and stop or delete the machine to save time.
+> I don't know how much is monthly allowance, I never ran out though!
 
 ## Sefaria
 
