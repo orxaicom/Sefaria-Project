@@ -9,15 +9,7 @@ There are two ways:
 > [!NOTE]  
 > Disable adblocks, and on FireFox, Disable Tracking Protection (Shield logo near the URL).
 
-![1](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/1.png)
-![2](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/2.png)
-![3](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/3.png)
-![4](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/4.png)
-![5](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/5.png)
-![6](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/6.png)
-![7](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/7.png)
-![8](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/8.png)
-![9](https://github.com/orxaicom/Sefaria-Project/blob/8b0c115172e6b169c48ba8169ebc25144f9b4ebe/tutorial-pics/9.png)
+![Video Tutorial](https://github.com/orxaicom/Sefaria-Project/blob/1514cf95bbc0a4cf47b7a4c52f8bad1e5b6599a9/video.gif)
 
 > [!TIP]
 > After you're done, go to [your Codespaces](https://github.com/codespaces) page and stop or delete the machine to save time.
