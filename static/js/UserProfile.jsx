@@ -11,10 +11,10 @@ import {
   TabView,
   SheetListing,
   ProfileListing,
-  ProfilePic,
   FollowButton,
   InterfaceText,
 } from './Misc';
+import {ProfilePic} from "./ProfilePic";
 import { SignUpModalKind } from './sefaria/signupModalContent';
 
 class UserProfile extends Component {
@@ -569,7 +569,7 @@ const ProfileSummary = ({ profile:p, follow, openFollowers, openFollowing, toggl
       // we only store twitter handles so twitter needs to be hardcoded
       <span>
         {
-          socialList.map(s => (<a key={s} className="social-icon" target="_blank" href={(s == 'twitter' ? 'https://twitter.com/' : '') + p[s]}><img src={`/static/img/${s}.svg`} /></a>))
+          socialList.map(s => (<a key={s} className="social-icon" target="_blank" href={(s === 'twitter' ? 'https://twitter.com/' : s === 'youtube' ? 'https://www.youtube.com/' : '') + p[s]}><img src={`/static/img/${s}.svg`} /></a>))
         }
       </span>
     );

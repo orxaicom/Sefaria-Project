@@ -1625,12 +1625,12 @@ Sefaria = extend(Sefaria, {
     // First sort by predefined "top"
     const hebrewTopByCategory = {
       "Tanakh": ["Rashi", "Ibn Ezra", "Ramban", "Sforno"],
-      "Talmud": ["Rashi", "Tosafot"],
+      "Talmud": ["Rashi", "Rashbam", "Tosafot"],
       "Mishnah": ["Bartenura", "Rambam", "Ikar Tosafot Yom Tov", "Yachin", "Boaz"]
     };
     const englishTopByCategory = {
       "Tanakh": ["Rashi", "Ibn Ezra", "Ramban", "Sforno"],
-      "Talmud": ["Rashi", "Tosafot"],
+      "Talmud": ["Rashi", "Rashbam", "Tosafot"],
       "Mishnah": ["Bartenura", "English Explanation of Mishnah", "Rambam", "Ikar Tosafot Yom Tov", "Yachin", "Boaz"]
     };
     const top = (byHebrew ? hebrewTopByCategory[category] : englishTopByCategory[category]) || [];
@@ -2730,10 +2730,13 @@ _media: {},
     }
 
     if (tabs["notable-sources"]) {
-      tabs["sources"]["title"] = {en: 'All Sources', he: Sefaria.translation('hebrew', 'All Sources')};
-    //turn "sources" tab into 'super-set', containing all refs from all tabs:
-      const allRefs = [...tabs["notable-sources"].refs, ...tabs["sources"].refs];
-      tabs["sources"].refs = allRefs;
+      if (!tabs.sources) {
+          tabs.sources = {refMap: {}, shouldDisplay: true, refs: []};
+      }
+      tabs.sources.title = {en: 'All Sources', he: Sefaria.translation('hebrew', 'All Sources')};
+      //turn "sources" tab into 'super-set', containing all refs from all tabs:
+      const allRefs = [...tabs["notable-sources"].refs, ...tabs.sources.refs];
+      tabs.sources.refs = allRefs;
     }
     if (Sefaria.is_moderator){
         tabs["admin"] = {...tabs["sources"]};

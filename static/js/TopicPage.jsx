@@ -168,7 +168,7 @@ const _extractAnalyticsDataFromRef = ref => {
     return {
         item_id: ref,
         content_id: title,
-        content_type: Sefaria.index(title).categories.join('|'),
+        content_type: Sefaria.index(title)?.categories?.join('|'),
     };
 };
 const refRenderWrapper = (toggleSignUpModal, topicData, topicTestVersion, langPref, isAdmin, displayDescription, hideLanguageMissingSources) => (item, index) => {
@@ -261,12 +261,15 @@ const TopicCategory = ({topic, topicTitle, setTopic, setNavTopic, compare, initi
         );
       });
 
-    const sidebarModules = [
+    let sidebarModules = [
       {type: "AboutTopics"},
       {type: "Promo"},
       {type: "TrendingTopics"},
       {type: "SponsorADay"},
     ];
+    if (topic === "torah-portions" && Sefaria.interfaceLang === "english") {
+        sidebarModules.splice(1, 0, {type: "StudyCompanion"});
+    }
 
     return (
         <div className="readerNavMenu noLangToggleInHebrew">
@@ -282,7 +285,7 @@ const TopicCategory = ({topic, topicTitle, setTopic, setNavTopic, compare, initi
                         <ResponsiveNBox content={topicBlocks} initialWidth={initialWidth} />
                       </div>
                   </div>
-                  <NavSidebar modules={sidebarModules} />
+                  <NavSidebar sidebarModules={sidebarModules} />
                 </div>
                 <Footer />
             </div>
@@ -440,22 +443,36 @@ return (
        : null}
        {tpTopImg}
        {topicData && topicData.ref ?
-         <a href={`/${topicData.ref.url}`} className="resourcesLink button blue">
-           <img src="/static/icons/book-icon-black.svg" alt="Book Icon" />
-           <span className="int-en">{ topicData.parasha ? Sefaria._('Read the Portion') : topicData.ref.en }</span>
-           <span className="int-he">{ topicData.parasha ? Sefaria._('Read the Portion') : norm_hebrew_ref(topicData.ref.he) }</span>
-         </a>
-       : null}
+           <div>
+               <a href={`/${topicData.ref.url}`} className="resourcesLink button blue">
+                   <img src="/static/icons/book-icon-black.svg" alt="Book Icon"/>
+                   <span className="int-en">{topicData.parasha ? Sefaria._('Read the Portion') : topicData.ref.en}</span>
+                   <span className="int-he">{topicData.parasha ? Sefaria._('Read the Portion') : norm_hebrew_ref(topicData.ref.he)}</span>
+               </a>
+               {Sefaria.interfaceLang === "english" &&
+               <a className="resourcesLink button blue studyCompanion"
+                  href="https://learn.sefaria.org/weekly-parashah/"
+                  data-anl-event="select_promotion:click|view_promotion:scrollIntoView"
+                  data-anl-promotion_name="Parashah Email Signup - Parashah Page"
+               >
+                  <img src="/static/icons/email-newsletter.svg" alt="Sign up for our weekly parashah study companion"/>
+                  <InterfaceText>Get the Free Study Companion</InterfaceText>
+               </a>}
+           </div>
+           : null}
     </div>
-);}
+);
+}
 
-const AuthorIndexItem = ({url, title, description}) => {
-  return (
-      <div className="authorIndex" >
-      <a href={url} className="navBlockTitle">
-        <ContentText text={title} defaultToInterfaceOnBilingual />
-      </a>
-      <div className="navBlockDescription">
+const AuthorIndexItem = ({
+    url, title, description
+}) => {
+    return (
+        <div className="authorIndex">
+            <a href={url} className="navBlockTitle">
+                <ContentText text={title} defaultToInterfaceOnBilingual/>
+            </a>
+            <div className="navBlockDescription">
         <ContentText text={description} defaultToInterfaceOnBilingual />
       </div>
     </div>
@@ -516,16 +533,16 @@ const PortalNavSideBar = ({portal, entriesToDisplayList}) => {
     "organization": "PortalOrganization",
     "newsletter": "PortalNewsletter"
     }
-    const modules = [];
+    const sidebarModules = [];
     for (let key of entriesToDisplayList) {
         if (!portal[key]) { continue; }
-        modules.push({
+        sidebarModules.push({
             type: portalModuleTypeMap[key],
             props: portal[key],
         });
     }
     return(
-        <NavSidebar modules={modules} />
+        <NavSidebar sidebarModules={sidebarModules} />
     )
 };
 
@@ -585,13 +602,16 @@ const TopicPage = ({
 
     useEffect( ()=> {
     // hack to redirect to temporary sheet content on topics page for those topics that only have sheet content.
-      if (document.querySelector('.filter-content') && !document.querySelector('.filter-content').firstChild) {
-        const interfaceIsHe = Sefaria.interfaceLang === "hebrew"
-        const topicPath = interfaceIsHe ? topicTitle.he : topicTitle.en;
-        const redirectUrl = `${document.location.origin}/search?q=${topicPath}&tab=sheet&tvar=1&tsort=relevance&stopics_${interfaceIsHe ? "he": "en"}Filters=${topicPath}&svar=1&ssort=relevance`
+if (!Sefaria.is_moderator && !topicData.isLoading && Object.keys(topicData.tabs).length == 0 && topicData.subclass != "author"){
+        const interfaceIsHe = Sefaria.interfaceLang === "hebrew";
+        const interfaceLang = interfaceIsHe ? 'he' : 'en';
+        const coInterfaceLang = interfaceIsHe ? 'en' : 'he';
+        const topicPathLang = topicTitle[interfaceLang] ? interfaceLang : coInterfaceLang
+        const topicPath = topicTitle[topicPathLang]
+        const redirectUrl = `${document.location.origin}/search?q=${topicPath}&tab=sheet&tvar=1&tsort=relevance&stopics_${topicPathLang}Filters=${topicPath}&svar=1&ssort=relevance`
         window.location.replace(redirectUrl);
       }
-    },[loadedData])
+    },[topicData])
 
     // Set up tabs and register incremental load hooks
     const displayTabs = [];
@@ -629,7 +649,7 @@ const TopicPage = ({
         });
       }
     }
-    if (displayTabs.length && tab!="notable-sources") {
+    if (displayTabs.length && tab!="notable-sources" && tab!="author-works-on-sefaria") {
       displayTabs.push({
         title: {
           en: "",
@@ -642,7 +662,7 @@ const TopicPage = ({
       onClickFilterIndex = displayTabs.length - 1;
     }
 
-    if (displayTabs.length) {
+    if (displayTabs.length && tab!="author-works-on-sefaria") {
       displayTabs.push({
         title: {
           en: "A",

@@ -15,12 +15,13 @@ import redis
 import os
 import re
 import uuid
+from dataclasses import asdict
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from django.template.loader import render_to_string
 from django.shortcuts import render, redirect
-from django.http import Http404, QueryDict
+from django.http import Http404, QueryDict, HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.encoding import iri_to_uri
@@ -42,8 +43,9 @@ from sefaria.model.schema import SheetLibraryNode
 from sefaria.model.following import general_follow_recommendations
 from sefaria.model.trend import user_stats_data, site_stats_data
 from sefaria.client.wrapper import format_object_for_client, format_note_object_for_client, get_notes, get_links
-from sefaria.client.util import jsonResponse
+from sefaria.client.util import jsonResponse, celeryResponse
 from sefaria.history import text_history, get_maximal_collapsed_activity, top_contributors, text_at_revision, record_version_deletion, record_index_deletion
+from sefaria.sefaria_tasks_interace.history_change import LinkChange, VersionChange
 from sefaria.sheets import get_sheets_for_ref, get_sheet_for_panel, annotate_user_links, trending_topics
 from sefaria.utils.util import text_preview, short_to_long_lang_code, epoch_time
 from sefaria.utils.hebrew import hebrew_term, has_hebrew
@@ -53,7 +55,7 @@ from sefaria.settings import STATIC_URL, USE_VARNISH, USE_NODE, NODE_HOST, DOMAI
 from sefaria.site.site_settings import SITE_SETTINGS
 from sefaria.system.multiserver.coordinator import server_coordinator
 from sefaria.system.decorators import catch_error_as_json, sanitize_get_params, json_response_decorator
-from sefaria.system.exceptions import InputError, PartialRefInputError, BookNameError, NoVersionFoundError, DictionaryEntryNotFoundError
+from sefaria.system.exceptions import InputError, PartialRefInputError, BookNameError, NoVersionFoundError, DictionaryEntryNotFoundError, ComplexBookLevelRefError
 from sefaria.system.cache import django_cache
 from sefaria.system.database import db
 from sefaria.helper.search import get_query_obj
@@ -80,45 +82,13 @@ from django.core.mail import EmailMultiAlternatives
 from babel import Locale
 from sefaria.helper.topic import update_topic
 from sefaria.helper.category import update_order_of_category_children, check_term
+from sefaria.helper.texts.tasks import save_version, save_changes, save_link
 
 if USE_VARNISH:
     from sefaria.system.varnish.wrapper import invalidate_ref, invalidate_linked
 
 import structlog
 logger = structlog.get_logger(__name__)
-
-#    #    #
-# Initialized cache library objects that depend on sefaria.model being completely loaded.
-logger.info("Initializing library objects.")
-logger.info("Initializing TOC Tree")
-library.get_toc_tree()
-
-logger.info("Initializing Shared Cache")
-library.init_shared_cache()
-
-if not DISABLE_AUTOCOMPLETER:
-    logger.info("Initializing Full Auto Completer")
-    library.build_full_auto_completer()
-
-    logger.info("Initializing Ref Auto Completer")
-    library.build_ref_auto_completer()
-
-    logger.info("Initializing Lexicon Auto Completers")
-    library.build_lexicon_auto_completers()
-
-    logger.info("Initializing Cross Lexicon Auto Completer")
-    library.build_cross_lexicon_auto_completer()
-
-    logger.info("Initializing Topic Auto Completer")
-    library.build_topic_auto_completer()
-
-if ENABLE_LINKER:
-    logger.info("Initializing Linker")
-    library.build_linker('he')
-
-if server_coordinator:
-    server_coordinator.connect()
-#    #    #
 
 
 def render_template(request, template_name='base.html', app_props=None, template_context=None, content_type=None, status=None, using=None):
@@ -1448,8 +1418,11 @@ def texts_api(request, tref):
             return text
 
         if not multiple or abs(multiple) == 1:
-            text = _get_text(oref, versionEn=versionEn, versionHe=versionHe, commentary=commentary, context=context, pad=pad,
-                             alts=alts, wrapLinks=wrapLinks, layer_name=layer_name)
+            try:
+                text = _get_text(oref, versionEn=versionEn, versionHe=versionHe, commentary=commentary, context=context, pad=pad,
+                                 alts=alts, wrapLinks=wrapLinks, layer_name=layer_name)
+            except Exception as e:
+                return jsonResponse({'error': str(e)}, status=400)
             return jsonResponse(text, cb)
         else:
             # Return list of many sections
@@ -1537,6 +1510,56 @@ def texts_api(request, tref):
         return jsonResponse({"status": "ok"})
 
     return jsonResponse({"error": "Unsupported HTTP method."}, callback=request.GET.get("callback", None))
+
+
+@catch_error_as_json
+@csrf_exempt
+def complete_version_api(request):
+
+    def internal_do_post():
+        skip_links = bool(int(request.POST.get("skip_links", 0)))
+        count_after = int(request.POST.get("count_after", 0))
+        version_change = VersionChange(raw_version=data, uid=request.user.id, method=method, patch=patch, count_after=count_after, skip_links=skip_links)
+        task_title = f'Version Post: {data["title"]} / {data["versionTitle"]} / {data["language"]}'
+        return save_changes([asdict(version_change)], save_version, method, task_title)
+
+    if request.method == "POST":
+        patch = False
+    elif request.method == 'PATCH':
+        patch = True
+    else:
+        return jsonResponse({"error": "Unsupported HTTP method."}, callback=request.GET.get("callback", None))
+
+    body_unicode = request.body.decode('utf-8')
+    body_data = urllib.parse.parse_qs(body_unicode)
+    json_data = body_data.get('json')[0]
+    if not json_data:
+        return jsonResponse({"error": "Missing 'json' parameter in post data."})
+    data = json.loads(json_data)
+
+    title = data.get('title')
+    if not title:
+        return jsonResponse({"error": "Missing title in 'json' parameter."})
+
+    try:
+        index = library.get_index(title.replace('_', ' '))
+    except BookNameError:
+        return jsonResponse({"error": f"No index named: {title}"})
+
+    if not request.user.is_authenticated:
+        key = body_data.get('apikey')[0]
+        if not key:
+            return jsonResponse({"error": "You must be logged in or use an API key to save texts."})
+        apikey = db.apikeys.find_one({"key": key})
+        method = 'API'
+        if not apikey:
+            return jsonResponse({"error": "Unrecognized API key."})
+    else:
+        method = None
+        internal_do_post = csrf_protect(internal_do_post())
+
+    return internal_do_post()
+
 
 @catch_error_as_json
 @csrf_exempt
@@ -1921,18 +1944,20 @@ def links_api(request, link_id_or_ref=None):
     #TODO: can we distinguish between a link_id (mongo id) for POSTs and a ref for GETs?
     """
 
-    def _internal_do_post(request, link, uid, **kwargs):
-        func = tracker.update if "_id" in link else tracker.add
-        # use the correct function if params indicate this is a note save
-        # func = save_note if "type" in j and j["type"] == "note" else save_link
-        #obj = func(apikey["uid"], model.Link, link, **kwargs)
-        obj = func(uid, Link, link, **kwargs)
-        try:
-            if USE_VARNISH:
-                revarnish_link(obj)
-        except Exception as e:
-            logger.error(e)
-        return format_object_for_client(obj)
+    def _internal_do_post(request, obj, uid, method, skip_check, override_preciselink):
+        responses = []
+        if isinstance(obj, dict):
+            obj = [obj]
+        links = []
+        for l, link in enumerate(obj):
+            if skip_check:
+                link["_skip_lang_check"] = True
+            if override_preciselink:
+                link["_override_preciselink"] = True
+            links.append(asdict(LinkChange(raw_link=link, uid=uid, method=method)))
+
+        task_title = f'Links Post. First link: {obj[0]["refs"][0]}-{obj[0]["refs"][1]}'
+        return save_changes(links, save_link, method, task_title)
 
     def _internal_do_delete(request, link_id_or_ref, uid):
         obj = tracker.delete(uid, Link, link_id_or_ref, callback=revarnish_link)
@@ -1958,12 +1983,12 @@ def links_api(request, link_id_or_ref=None):
         if not apikey:
             return jsonResponse({"error": "Unrecognized API key."})
         uid = apikey["uid"]
-        kwargs = {"method": "API"}
+        method = "API"
         user = User.objects.get(id=apikey["uid"])
     else:
         user = request.user
         uid = request.user.id
-        kwargs = {}
+        method = None
         _internal_do_post = csrf_protect(_internal_do_post)
         _internal_do_delete = staff_member_required(csrf_protect(_internal_do_delete))
 
@@ -1975,30 +2000,7 @@ def links_api(request, link_id_or_ref=None):
         j = json.loads(j)
         skip_check = request.GET.get("skip_lang_check", 0)
         override_preciselink = request.GET.get("override_preciselink", 0)
-        if isinstance(j, list):
-            res = []
-            for i in j:
-                try:
-                    if skip_check:
-                        i["_skip_lang_check"] = True
-                    if override_preciselink:
-                        i["_override_preciselink"] = True
-                    retval = _internal_do_post(request, i, uid, **kwargs)
-                    res.append({"status": "ok. Link: {} | {} Saved".format(retval["ref"], retval["anchorRef"])})
-                except Exception as e:
-                    res.append({"error": "Link: {} | {} Error: {}".format(i["refs"][0], i["refs"][1], str(e))})
-
-            try:
-                res_slice = request.GET.get("truncate_response", None)
-                if res_slice:
-                    res_slice = int(res_slice)
-            except Exception as e:
-                res_slice = None
-            return jsonResponse(res[:res_slice])
-        else:
-            if skip_check:
-                j["_skip_lang_check"] = True
-            return jsonResponse(_internal_do_post(request, j, uid, **kwargs))
+        return _internal_do_post(request, j, uid, method, skip_check, override_preciselink)
 
     if request.method == "DELETE":
         if not link_id_or_ref:
@@ -3085,6 +3087,7 @@ def topics_list_api(request):
 @staff_member_required
 def generate_topic_prompts_api(request, slug: str):
     if request.method == "POST":
+        task_ids = []
         from sefaria.helper.llm.tasks import generate_and_save_topic_prompts
         from sefaria.helper.llm.topic_prompt import get_ref_context_hints_by_lang
         topic = Topic.init(slug)
@@ -3092,8 +3095,8 @@ def generate_topic_prompts_api(request, slug: str):
         ref_topic_links = post_body.get('ref_topic_links')
         for lang, ref__context_hints in get_ref_context_hints_by_lang(ref_topic_links).items():
             orefs, context_hints = zip(*ref__context_hints)
-            generate_and_save_topic_prompts(lang, topic, orefs, context_hints)
-        return jsonResponse({"acknowledged": True}, status=202)
+            task_ids.append(generate_and_save_topic_prompts(lang, topic, orefs, context_hints).id)
+        return celeryResponse(task_ids)
     return jsonResponse({"error": "This API only accepts POST requests."})
 
 
@@ -3198,6 +3201,16 @@ def topic_graph_api(request, topic):
             "topics": [t.contents() for t in topics],
             "links": [l.contents() for l in links]
         }
+    return jsonResponse(response, callback=request.GET.get("callback", None))
+
+
+@catch_error_as_json
+def topic_pool_api(request, pool_name):
+    from django_topics.models import Topic as DjangoTopic
+    n_samples = int(request.GET.get("n"))
+    order = request.GET.get("order", "random")
+    topic_slugs = DjangoTopic.objects.sample_topic_slugs(order, pool_name, n_samples)
+    response = [Topic.init(slug).contents() for slug in topic_slugs]
     return jsonResponse(response, callback=request.GET.get("callback", None))
 
 
@@ -4196,8 +4209,9 @@ def random_by_topic_api(request):
     """
     Returns Texts API data for a random text taken from popular topic tags
     """
+    from django_topics.models import PoolType
     cb = request.GET.get("callback", None)
-    random_topic = get_random_topic(good_to_promote=True)
+    random_topic = get_random_topic(PoolType.TORAH_TAB.value)
     if random_topic is None:
         return random_by_topic_api(request)
     random_source = get_random_topic_source(random_topic)
@@ -4595,9 +4609,9 @@ def android_asset_links_json(request):
         }]
     )
 
-def application_health_api(request):
+def rollout_health_api(request):
     """
-    Defines the /healthz  and /health-check API endpoints which responds with
+    Defines the /healthz-rollout API endpoint which responds with
         200 if the application is ready for requests,
         500 if the application is not ready for requests
     """
@@ -4611,9 +4625,9 @@ def application_health_api_nonlibrary(request):
     return http.HttpResponse("Healthy", status="200")
 
 
-def rollout_health_api(request):
+def application_health_api(request):
     """
-    Defines the /healthz-rollout API endpoint which responds with
+    Defines the /healthz API endpoint which responds with
         200 if the services Django depends on, Redis, Multiserver, and NodeJs
             are available.
         500 if any of the aforementioned services are not available
